@@ -25,7 +25,7 @@ void kprintf_register(kprintf_backend_t *b)
     list_insert_before(&backends, &b->node);
 }
 
-#define MAX_LENGTH (80)
+#define MAX_LENGTH (128)
 
 void kprintf(const char *format, ...)
 {
