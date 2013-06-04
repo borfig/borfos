@@ -35,9 +35,9 @@ The kernel follows the [MultiBoot specification](http://www.gnu.org/software/gru
 
 In order to run it on [KVM](http://www.linux-kvm.org/), execute:
 ```sh
-qemu-system-x86_64 -kernel kernel/build/kernel.bin
+qemu-system-x86_64 -kernel kernel/build/kernel.bin -cpu core2duo
 ```
 or
 ```sh
-qemu-system-i386 -kernel kernel/build/kernel.bin
+qemu-system-i386 -kernel kernel/build/kernel.bin -cpu core2duo
 ```
