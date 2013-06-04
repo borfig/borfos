@@ -33,6 +33,8 @@ static int has_cpuid(void)
                            "=c"(ecx), "=d"(edx) \
                          : "a"(i));
 
+#define KVM_CPUID_SIGNATURE 0x40000000
+
 CONSTRUCTOR(cpuid)
 {
     if (!has_cpuid()) {
@@ -58,5 +60,12 @@ CONSTRUCTOR(cpuid)
 
     if (!(ecx & (1 << 31))) {
         PANIC("Your CPU is not supported: it is not virtual");
+    }
+
+    CPUID(KVM_CPUID_SIGNATURE, eax, ebx, ecx, edx);
+    if (0x4b4d564b != ebx ||
+        0x564b4d56 != ecx ||
+        0x0000004d != edx) {
+        PANIC("Your CPU is not supported: it is not virtual KVM CPU");
     }
 }
