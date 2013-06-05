@@ -19,9 +19,31 @@
 #include <mem.h>
 #include <kprintf.h>
 
-#define HAVE_MORECORE 1
+#define HAVE_MMAP (1)
 
-#define MORECORE kernel_sbrk
+static void *__mmap__(size_t s)
+{
+    kprintf("__mmap__(%u)", s);
+    size_t pages = s >> PAGE_BITS;
+    unsigned order = 0;
+    for(; pages > (1u << order); ++order);
+    kprintf("%u", order);
+    void *result = kernel_page_allocate(order);
+    if (NULL == result)
+        return (void*)-1;
+    return result;
+}
+
+static int __munmap__(void *addr, size_t s)
+{
+    kprintf("__munmap__(%p, %u)", addr, s);
+    kernel_page_free(addr);
+    return 0;
+}
+
+#define MMAP(s) __mmap__((s))
+#define DIRECT_MMAP(s) MMAP(s)
+#define MUNMAP(a, s) __munmap__((a), (s))
 
 #define LACKS_UNISTD_H
 #define LACKS_FCNTL_H
@@ -40,7 +62,7 @@
 
 #define ABORT freeze_system()
 
-#define HAVE_MMAP (0)
+#define HAVE_MORECORE (0)
 #define HAVE_MREMAP (0)
 #define MAP_ANONYMOUS
 #define NO_MALLOC_STATS (1)

@@ -65,7 +65,11 @@ typedef struct page_s {
 page_t *page_allocate(unsigned order);
 void page_free(page_t *);
 
-void *kernel_sbrk(intptr_t increment);
+void *map_phaddr_in_kernel(uint32_t phaddr, unsigned order);
+void unmap_phaddr_in_kernel(void *addr);
+
+void *kernel_page_allocate(unsigned order);
+void kernel_page_free(void *addr);
 
 #endif /* !ASM */
 

@@ -32,8 +32,6 @@ extern char _initial_mapping_end;
 
 uint32_t last_kernel_phaddr = PA((uint32_t)&_initial_mapping_end);
 
-uint32_t last_kernel_vaddr;
-
 // called before enabling paging
 // all access to memory must be through PA and TPA macros
 void memory_setup_paging(void)
@@ -91,6 +89,7 @@ static void *bootheap_allocate(size_t size)
 
 static page_t *pages;
 static list_t pages_free_list[BUDDY_ORDER_LIMIT];
+static size_t pages_count;
 
 static int max_order_for_length(size_t length)
 {
@@ -126,6 +125,25 @@ static void add_pages_to_pool(size_t from, size_t to)
     }
 }
 
+typedef struct vaddr_s {
+    list_t free_node;
+    int order;
+} vaddr_t;
+
+static vaddr_t vaddrs[KERNEL_MEMORY_PAGES];
+static list_t vaddrs_free_list[BUDDY_ORDER_LIMIT];
+
+static void add_vaddrs_to_pool(size_t from, size_t to)
+{
+    size_t index = from;
+    while (index < to) {
+        int order = max_order(index, to - index);
+        vaddr_t *vaddr = &vaddrs[index];
+        list_insert_before(vaddrs_free_list + order, &vaddr->free_node);
+        index += 1u << order;
+    }
+}
+
 CONSTRUCTOR(mem)
 {
     intr_set(0xe, pf_isr);
@@ -145,7 +163,7 @@ CONSTRUCTOR(mem)
     }
     last_kernel_phaddr = (last_kernel_phaddr + 3) &~3;
 
-    size_t pages_count = (memory_size+(PAGE_SIZE-1))>>PAGE_BITS;
+    pages_count = (memory_size+(PAGE_SIZE-1))>>PAGE_BITS;
 
     pages = bootheap_allocate(sizeof(*pages) * pages_count);
 
@@ -174,7 +192,13 @@ CONSTRUCTOR(mem)
             base = last_kernel_phaddr;
         add_pages_to_pool(base >> PAGE_BITS, (end + (PAGE_SIZE-1)) >> PAGE_BITS);
     }
-    last_kernel_vaddr = VA(last_kernel_phaddr);
+    ARRAY_FOREACH(node, vaddrs_free_list)
+        list_init(node);
+    ARRAY_FOREACH(vaddr, vaddrs) {
+        list_init(&vaddr->free_node);
+        vaddr->order = -1;
+    }
+    add_vaddrs_to_pool(last_kernel_phaddr >> PAGE_BITS, KERNEL_MEMORY_PAGES);
 }
 
 page_t *page_allocate(unsigned order)
@@ -207,7 +231,10 @@ void page_free(page_t *page)
     int order = page->order;
 
     while (order < BUDDY_ORDER_LIMIT-1) {
-        page_t *buddy = pages + (index^(1<<order));
+        size_t buddy_index = index^(1<<order);
+        if (buddy_index >= pages_count)
+            break;
+        page_t *buddy = pages + buddy_index;
         if (list_is_empty(&buddy->free_node))
             break;
         list_remove(&buddy->free_node);
@@ -219,29 +246,84 @@ void page_free(page_t *page)
     page->order = -1;
 }
 
-void *kernel_sbrk(intptr_t increment)
+static vaddr_t *vaddr_allocate(unsigned order)
 {
-    void *result = (void*)last_kernel_vaddr;
-    uint32_t next_sbrk = last_kernel_vaddr + increment;
-    uint32_t last_allocated = (last_kernel_vaddr + (PAGE_SIZE-1)) & ~(PAGE_SIZE-1);
-    uint32_t next_allocated = (next_sbrk + (PAGE_SIZE-1)) & ~(PAGE_SIZE-1);
-    if (increment > 0) {
-        while (last_allocated < next_allocated) {
-            page_t *page = page_allocate(0);
-            if (NULL == page) PANIC("no more memory");
-            kernel_page_tables[PA(last_allocated) >> PAGE_BITS] = ((page - pages) << PAGE_BITS) | 3;
-            last_allocated += PAGE_SIZE;
-        }
+    unsigned o = order;
+    for(; o < BUDDY_ORDER_LIMIT && list_is_empty(vaddrs_free_list + o); ++o);
+    if (o == BUDDY_ORDER_LIMIT)
+        return NULL;
+    while (o > order) {
+        vaddr_t *vaddr = LIST_ELEMENT_AT(vaddrs_free_list[o].next, vaddr_t, free_node);
+        size_t index = vaddr - vaddrs;
+        list_remove(vaddrs_free_list[o].next);
+        --o;
+        list_insert_before(vaddrs_free_list + o, &vaddr->free_node);
+        list_insert_before(vaddrs_free_list + o, &vaddrs[index ^ (1 << o)].free_node);
     }
-    else if (increment < 0) {
-        while (last_allocated > next_allocated) {
-            last_allocated -= PAGE_SIZE;
-            uint32_t *page_entry = &kernel_page_tables[PA(last_allocated) >> PAGE_BITS];
-            page_t *page = pages + (*page_entry >> PAGE_BITS);
-            *page_entry = 0;
-            page_free(page);
-        }
+    {
+        vaddr_t *vaddr = LIST_ELEMENT_AT(vaddrs_free_list[order].next, vaddr_t, free_node);
+        list_remove(vaddrs_free_list[order].next);
+        vaddr->order = order;
+        return vaddr;
     }
-    last_kernel_vaddr = next_sbrk;
+}
+
+static void vaddr_free(vaddr_t *vaddr)
+{
+    if (-1 == vaddr->order)
+        return;
+    size_t index = vaddr - vaddrs;
+    int order = vaddr->order;
+
+    while (order < BUDDY_ORDER_LIMIT-1) {
+        vaddr_t *buddy = vaddrs + (index^(1<<order));
+        if (list_is_empty(&buddy->free_node))
+            break;
+        list_remove(&buddy->free_node);
+        index &= ~(1 << order);
+        ++order;
+    }
+    vaddr = vaddrs + index;
+    list_insert_before(vaddrs_free_list + order, &vaddr->free_node);
+    vaddr->order = -1;
+}
+
+void *map_phaddr_in_kernel(uint32_t phaddr, unsigned order)
+{
+    vaddr_t *vaddr = vaddr_allocate(order);
+    if (NULL == vaddr)
+        return NULL;
+    size_t page_index = vaddr - vaddrs;
+    size_t count = 1 << order;
+    for(size_t i = 0; i < count; ++i)
+        kernel_page_tables[page_index + i] = phaddr + (i << PAGE_BITS) + 3;
+    return (void*)(KERNEL_MEMORY_BASE + (page_index << PAGE_BITS));
+}
+
+void unmap_phaddr_in_kernel(void *addr)
+{
+    size_t page_index = (((uint32_t)addr) - KERNEL_MEMORY_BASE) >> PAGE_BITS;
+    vaddr_t *vaddr = vaddrs + page_index;
+    size_t count = 1 << vaddr->order;
+    for(size_t i = 0; i < count; ++i)
+        kernel_page_tables[page_index + i] = 0;
+    vaddr_free(vaddr);
+}
+
+void *kernel_page_allocate(unsigned order)
+{
+    page_t *page = page_allocate(order);
+    if (NULL == page)
+        return NULL;
+    void *result = map_phaddr_in_kernel((page - pages) << PAGE_BITS, order);
+    if (NULL == result)
+        page_free(page);
     return result;
+}
+
+void kernel_page_free(void *addr)
+{
+    size_t page_index = (((uint32_t)addr) - KERNEL_MEMORY_BASE) >> PAGE_BITS;
+    page_free(pages + (kernel_page_tables[page_index] >> PAGE_BITS));
+    unmap_phaddr_in_kernel(addr);
 }
