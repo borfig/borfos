@@ -52,7 +52,7 @@ all: $(O)/kernel.bin
 OBJS := boot/entry.o boot/mboot.o boot/startup.o
 
 OBJS += drivers/cpu/gdt.o drivers/cpu/idt.o drivers/cpu/cpuid.o
-OBJS += drivers/vga.o
+OBJS += drivers/vga.o drivers/pic.o
 
 OBJS += lib/mem.o
 OBJS += lib/kprintf.o lib/bprintf.o

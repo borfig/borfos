@@ -20,4 +20,5 @@ DEPENDENCIES = {
     'vga':[],
     'mem':['idt'],
     'cpuid':['vga'],
+    'pic':['idt'],
     }
