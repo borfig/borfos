@@ -16,7 +16,8 @@
 # along with borfos. If not, see <http://www.gnu.org/licenses/>.
 
 DEPENDENCIES = {
+    'idt':[],
     'vga':[],
-    'mem':[],
+    'mem':['idt'],
     'cpuid':['vga'],
     }

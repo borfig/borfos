@@ -20,9 +20,21 @@
 
 #include <stdint.h>
 
-void idt_set_gate(uint8_t index,
-                  uint32_t offset,
-                  uint16_t selector,
-                  uint8_t type_attr);
+typedef struct {
+    uint32_t gs, fs, es, ds;
+    uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;
+    uint32_t int_no, err_code;
+    uint32_t eip, cs, eflags;
+    uint32_t ret_esp; /* valid if cs != 8 */
+} int_regs_t;
+
+typedef void (*interrupt_handler_t)(int_regs_t*);
+
+void set_interrupt_handler(uint8_t int_no, interrupt_handler_t handler, uint8_t type_attr);
+
+static inline void set_kernel_interrupt_handler(uint8_t int_no, interrupt_handler_t handler)
+{
+    set_interrupt_handler(int_no, handler, 0x8e);
+}
 
 #endif /* ARCH_IDT_H */

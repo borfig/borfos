@@ -16,7 +16,7 @@
  *  along with borfos.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <mem.h>
-#include <intr.h>
+#include <idt.h>
 #include <asm.h>
 #include <ctors.h>
 #include <multiboot.h>
@@ -59,12 +59,18 @@ void memory_post_setup_paging(void)
 }
 
 // page fault handler
-void pf_handler (void)
+static void pf_handler(int_regs_t*regs)
 {
-    freeze_system();
+    uint32_t cr2;
+    __asm__ __volatile__ ("mov %%cr2, %0"
+                          : "=r"(cr2));
+    kprintf("Page Fault (14) exception at %04x:%08x", regs->cs, regs->eip);
+    kprintf("Err code %x eflags %08x cr2 %08x", regs->err_code, regs->eflags, cr2);
+    kprintf("eax %08x ecx %08x edx %08x ebx %08x", regs->eax, regs->ecx, regs->edx, regs->ebx);
+    kprintf("esp %08x ebp %08x esi %08x edi %08x", regs->ret_esp, regs->ebp, regs->esi, regs->edi);
+    kprintf("ds %04hx es %04hx fs %04hx gs %04hx", regs->ds, regs->es, regs->fs, regs->gs);
+    PANIC("Unhandled Page Fault");
 }
-
-INTR_NO_ERROR(pf_isr, pf_handler);
 
 static void memory_map_kernel_range(uint32_t phaddr, uint32_t phend)
 {
@@ -146,7 +152,7 @@ static void add_vaddrs_to_pool(size_t from, size_t to)
 
 CONSTRUCTOR(mem)
 {
-    intr_set(0xe, pf_isr);
+    set_kernel_interrupt_handler(0xe, pf_handler);
     const memory_map_t *mmap_end = (const memory_map_t*)(((const char*)mbi->mmap_addr) + mbi->mmap_length);
     if (!memory_size) {
         for(const memory_map_t *mmap_addr = mbi->mmap_addr;
