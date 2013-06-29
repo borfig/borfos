@@ -32,13 +32,13 @@ endif
 
 GCC_LIB=/usr/lib/gcc/$(GCC_TARGET)/$(GCC_VERSION)/$(ARCH_DIR)/libgcc.a
 
-INCLUDES=-Iinclude -Ibuild/include
+INCLUDES := -Iinclude -Ibuild/include
 
 COMMONFLAGS=-MD $(ARCHFLAG) $(INCLUDES)
 
 CFLAGS := $(COMMONFLAGS) -march=i386 -std=gnu99 -O3 -nostdlib -pedantic -Wall -Wextra -ffunction-sections -fdata-sections
 
-CFLAGS += '-D_AND=,' '-D_DEFUN(a,b,c)=a(c)' '-D_EXFUN(a,b)=a(b)'
+CFLAGS += '-D_AND=,' '-D_DEFUN(a,b,c)=a(c)' '-D_EXFUN(a,b)=a(b)' '-D_CONST=const'
 
 ASFLAGS = $(COMMONFLAGS) -DASM
 
@@ -57,7 +57,9 @@ OBJS += drivers/vga.o drivers/pic.o
 OBJS += lib/mem.o
 OBJS += lib/kprintf.o lib/bprintf.o
 
-OBJS += libc/heap.o libc/newlib/memmove.o
+OBJS += libc/heap.o libc/ctype.o
+OBJS += libc/newlib/memmove.o libc/newlib/memcmp.o libc/newlib/strncpy.o
+OBJS += libc/newlib/strcat.o libc/newlib/strcpy.o
 
 OBJS := $(addprefix $(O)/, $(OBJS))
 
