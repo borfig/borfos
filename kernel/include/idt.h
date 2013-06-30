@@ -37,4 +37,11 @@ static inline void set_kernel_interrupt_handler(uint8_t int_no, interrupt_handle
     set_interrupt_handler(int_no, handler, 0x8e);
 }
 
+int allocate_interrupts(uint8_t order);
+
+static inline int allocate_interrupt(void)
+{
+    return allocate_interrupts(0);
+}
+
 #endif /* ARCH_IDT_H */

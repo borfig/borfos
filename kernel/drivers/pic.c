@@ -76,6 +76,9 @@ CONSTRUCTOR(pic)
     outb(PIC1_DATA, ICW4_8086);
     outb(PIC2_DATA, ICW4_8086);
     set_mask();
+    int base = allocate_interrupts(4);
+    if (base < 0)
+        PANIC("could not allocate interrupts for PIC");
     for(uint8_t int_no = 0x20; int_no < 0x30; ++int_no)
         set_kernel_interrupt_handler(int_no, pic_handler);
 }

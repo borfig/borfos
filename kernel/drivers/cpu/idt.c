@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <ctors.h>
 #include <kprintf.h>
+#include <string.h>
 
 typedef struct {
     uint16_t offset_1;
@@ -37,6 +38,7 @@ static IDT_entry_t idt[256];
 const IDT_t IDT = {sizeof(idt)-1, idt};
 
 static interrupt_handler_t handlers[256];
+static uint8_t used_interrupts[256];
 
 #define ISRE(n)                                 \
     __asm__ ("_isr" #n ": cli\n\t"              \
@@ -97,6 +99,7 @@ CONSTRUCTOR(idt)
 #include "isr.h"
 #undef ISRE
 #undef ISR
+    memset(used_interrupts, 1, 0x20);
 }
 
 static const char *exception_messages[0x20] =
@@ -156,4 +159,21 @@ void set_interrupt_handler(uint8_t int_no, interrupt_handler_t handler, uint8_t 
     IDT_entry_t* e = idt + int_no;
     e->type_attr = type_attr;
     handlers[int_no] = handler;
+}
+
+int allocate_interrupts(uint8_t order)
+{
+    if (order >= 0x8)
+        return -1;
+    unsigned count = 1 << order;
+    unsigned base = 0;
+    for (; base < 0x100; base += count) {
+        unsigned i;
+        for(i = 0; i < count && !used_interrupts[base+i]; ++i);
+        if (i == count) {
+            memset(used_interrupts + base, 1, count);
+            return base;
+        }
+    }
+    return -1;
 }
