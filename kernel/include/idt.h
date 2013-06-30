@@ -44,4 +44,6 @@ static inline int allocate_interrupt(void)
     return allocate_interrupts(0);
 }
 
+void print_int_regs(const int_regs_t *regs);
+
 #endif /* ARCH_IDT_H */

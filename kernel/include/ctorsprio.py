@@ -20,7 +20,7 @@ DEPENDENCIES = {
     'vga':[],
     'mem':['idt'],
     'cpuid':['vga'],
-    'lapic':['cpuid', 'mem','vga'],
+    'lapic':['cpuid', 'mem', 'vga', 'idt', 'pic'],
     'kvm':['cpuid', 'lapic', 'vga'],
     'pic':['idt'],
     }

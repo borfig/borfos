@@ -138,6 +138,14 @@ static const char *exception_messages[0x20] =
     "Reserved"
 };
 
+void print_int_regs(const int_regs_t *regs)
+{
+    kprintf("Err code %x eflags %08x", regs->err_code, regs->eflags);
+    kprintf("eax %08x ecx %08x edx %08x ebx %08x", regs->eax, regs->ecx, regs->edx, regs->ebx);
+    kprintf("esp %08x ebp %08x esi %08x edi %08x", regs->ret_esp, regs->ebp, regs->esi, regs->edi);
+    kprintf("ds %04hx es %04hx fs %04hx gs %04hx", regs->ds, regs->es, regs->fs, regs->gs);
+}
+
 void isr_handler(int_regs_t *regs)
 {
     interrupt_handler_t h = handlers[regs->int_no];
@@ -146,10 +154,7 @@ void isr_handler(int_regs_t *regs)
     else {
         kprintf("%s (%d) exception at %04x:%08x",
                 (regs->int_no < 0x20) ? exception_messages[regs->int_no] : "Unknown", regs->int_no, regs->cs, regs->eip);
-        kprintf("Err code %x eflags %08x", regs->err_code, regs->eflags);
-        kprintf("eax %08x ecx %08x edx %08x ebx %08x", regs->eax, regs->ecx, regs->edx, regs->ebx);
-        kprintf("esp %08x ebp %08x esi %08x edi %08x", regs->ret_esp, regs->ebp, regs->esi, regs->edi);
-        kprintf("ds %04hx es %04hx fs %04hx gs %04hx", regs->ds, regs->es, regs->fs, regs->gs);
+        print_int_regs(regs);
         PANIC("Unhandled exception");
     }
 }

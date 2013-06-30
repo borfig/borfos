@@ -21,15 +21,23 @@
 #include <kprintf.h>
 #include <asm.h>
 #include <mem.h>
+#include <idt.h>
 
 uint32_t lapic_base;
 
-void default_lapic_eoi(void)
+static void default_lapic_eoi(void)
 {
     _lapic_eoi();
 }
 
 void (*lapic_eoi)(void) = default_lapic_eoi;
+
+static void spurious_handler(int_regs_t *regs)
+{
+    kprintf("Spurios interrupt from APIC at %04x:%08x", regs->cs, regs->eip);
+    print_int_regs(regs);
+    PANIC("Got a spurious interrupt from APIC");
+}
 
 CONSTRUCTOR(lapic)
 {
@@ -46,4 +54,12 @@ CONSTRUCTOR(lapic)
 
     lapic_base = (uint32_t)map_phaddr_in_kernel(lapic_phaddr, 0);
     lapic_write(0xE0, 0xFFFFFFFF);
+
+    int spurious_intno = allocate_interrupt();
+    if (spurious_intno < 0)
+        PANIC("not enough interrupts");
+    lapic_write(0xF0, ((unsigned)spurious_intno) | 0x100u);
+    lapic_write(0x80, 0);
+
+    set_kernel_interrupt_handler(spurious_intno, spurious_handler);
 }
