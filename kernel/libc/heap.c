@@ -17,17 +17,14 @@
  */
 #include <asm.h>
 #include <mem.h>
-#include <kprintf.h>
 
 #define HAVE_MMAP (1)
 
 static void *__mmap__(size_t s)
 {
-    kprintf("__mmap__(%u)", s);
     size_t pages = s >> PAGE_BITS;
     unsigned order = 0;
     for(; pages > (1u << order); ++order);
-    kprintf("%u", order);
     void *result = kernel_page_allocate(order);
     if (NULL == result)
         return (void*)-1;
@@ -36,7 +33,7 @@ static void *__mmap__(size_t s)
 
 static int __munmap__(void *addr, size_t s)
 {
-    kprintf("__munmap__(%p, %u)", addr, s);
+    s=s;
     kernel_page_free(addr);
     return 0;
 }
