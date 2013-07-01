@@ -34,6 +34,7 @@ void (*lapic_eoi)(void) = default_lapic_eoi;
 
 static void spurious_handler(int_regs_t *regs)
 {
+    lapic_eoi();
     kprintf("Spurios interrupt from APIC at %04x:%08x", regs->cs, regs->eip);
     print_int_regs(regs);
     PANIC("Got a spurious interrupt from APIC");

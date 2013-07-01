@@ -23,4 +23,5 @@ DEPENDENCIES = {
     'lapic':['cpuid', 'mem', 'vga', 'idt', 'pic'],
     'kvm':['cpuid', 'lapic', 'vga'],
     'pic':['idt'],
+    'apictimer':['lapic'],
     }

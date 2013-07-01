@@ -47,15 +47,16 @@ LDFLAGS += -Xlinker --gc-sections
 
 O := build
 
-all: $(O)/kernel.bin
+all: $(O)/kernel.bin $(O)/kernel.dis
 
 OBJS := boot/entry.o boot/mboot.o boot/startup.o
 
 OBJS += drivers/cpu/gdt.o drivers/cpu/idt.o drivers/cpu/cpuid.o
 OBJS += drivers/cpu/lapic.o drivers/cpu/kvm.o
 OBJS += drivers/vga.o drivers/pic.o
+OBJS += drivers/timers/apic.o
 
-OBJS += lib/mem.o
+OBJS += lib/mem.o lib/timers.o
 OBJS += lib/kprintf.o lib/bprintf.o
 
 OBJS += libc/heap.o libc/ctype.o
@@ -79,6 +80,9 @@ $(shell grep -l ctors.h `find -name \*.c | cut -c3-`) : $(O)/include/ctorsprio.h
 
 %.elf: %.ld %.o
 	gcc $(ARCHFLAG) $(LDFLAGS) -o $@ -T $^
+
+%.dis: %.elf
+	objdump -d $^ > $@
 
 %.bin: %.elf
 	objcopy -O binary -v $^ $@

@@ -35,5 +35,5 @@ The kernel follows the [MultiBoot specification](http://www.gnu.org/software/gru
 
 In order to run it on [KVM](http://www.linux-kvm.org/), execute:
 ```sh
-qemu-kvm -kernel kernel/build/kernel.bin
+qemu-kvm -kernel kernel/build/kernel.bin -cpu kvm32,+tsc-deadline
 ```

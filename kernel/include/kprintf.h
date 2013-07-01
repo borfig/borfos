@@ -43,7 +43,7 @@ void kprintf_register(kprintf_backend_t *);
         freeze_system(); \
     } while(0)
 
-#define PANIC_ON(condition) do {\
+#define ASSERT(condition) do {\
     if (!(condition)) \
         PANIC(#condition " failed"); \
     } while(0)

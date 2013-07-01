@@ -18,11 +18,17 @@
 #ifndef CLOCK_H
 #define CLOCK_H
 
+#include <asm.h>
+
 uint64_t tsc_to_nanoseconds(uint64_t tsc);
+
+static inline uint64_t now(void)
+{
+    return rdtsc();
+}
 
 uint64_t now_in_nanoseconds(void);
 
-uint64_t nanoseconds_to_tsc(uint64_t ns)
-
+uint64_t nanoseconds_to_tsc(uint64_t ns);
 
 #endif /* CLOCK_H */
