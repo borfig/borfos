@@ -15,20 +15,41 @@
  *  You should have received a copy of the GNU General Public License
  *  along with borfos.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <ctors.h>
-#include <kprintf.h>
-#include <scheduler.h>
+#ifndef SCHEDULER_H
+#define SCHEDULER_H
 
-static void init(void)
+#include <list.h>
+#include <timers.h>
+
+typedef struct task_s {
+    char *kernel_stack; /* must be first! */
+    char *kernel_stack_page;
+    list_t queue_node;
+} task_t;
+
+extern task_t *current_task;
+
+typedef void (*task_main_function_t)(void);
+
+task_t *create_kernel_task(task_main_function_t func);
+
+void schedule_task(task_t *t);
+void unschedule_task(task_t *t);
+
+static inline task_t *start_kernel_task(task_main_function_t func)
 {
-#define CONSTRUCTOR_ITEM(x) x##_init();
-    CONSTRUCTORS
-#undef CONSTRUCTORITEM
+    task_t *t = create_kernel_task(func);
+    schedule_task(t);
+    return t;
 }
 
-void startup(void)
-{
-    init();
-    kprintf("borfos");
-    scheduler_start();
-}
+void scheduler_start(void);
+
+void unschedule(void);
+void giveup_cpu(void);
+
+void schedule();
+
+void sleep_tsc(uint64_t tsc);
+
+#endif /* SCHEDULER_H */

@@ -24,4 +24,5 @@ DEPENDENCIES = {
     'kvm':['cpuid', 'lapic', 'vga'],
     'pic':['idt'],
     'apictimer':['lapic'],
+    'scheduler':['mem'],
     }

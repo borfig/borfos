@@ -15,20 +15,13 @@
  *  You should have received a copy of the GNU General Public License
  *  along with borfos.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <ctors.h>
-#include <kprintf.h>
-#include <scheduler.h>
+#ifndef REGS_H
+#define REGS_H
 
-static void init(void)
-{
-#define CONSTRUCTOR_ITEM(x) x##_init();
-    CONSTRUCTORS
-#undef CONSTRUCTORITEM
-}
+#include <stdint.h>
 
-void startup(void)
-{
-    init();
-    kprintf("borfos");
-    scheduler_start();
-}
+typedef struct {
+    uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;
+} __attribute__((packed)) pushaed_registers_t;
+
+#endif /* REGS_H */
