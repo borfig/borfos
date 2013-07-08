@@ -25,6 +25,7 @@ typedef struct task_s {
     char *kernel_stack; /* must be first! */
     char *kernel_stack_page;
     list_t queue_node;
+    timer_t timer;
 } task_t;
 
 extern task_t *current_task;
@@ -51,5 +52,6 @@ void giveup_cpu(void);
 void schedule();
 
 void sleep_tsc(uint64_t tsc);
+void cancel_sleep(task_t *);
 
 #endif /* SCHEDULER_H */

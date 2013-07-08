@@ -42,6 +42,11 @@ task_t *current_task;
         s += sizeof(v);     \
     } while(0)
 
+static void timer_callback(void *arg)
+{
+    schedule_task((task_t*)arg);
+}
+
 task_t *create_kernel_task(task_main_function_t func)
 {
     task_t *new_task = malloc(sizeof(*new_task));
@@ -51,6 +56,8 @@ task_t *create_kernel_task(task_main_function_t func)
 
     STACK_PUSH(new_task->kernel_stack, (uintptr_t)func);
     STACK_PUSH_EMPTY(new_task->kernel_stack, pushaed_registers_t);
+
+    timer_init(&new_task->timer, 0, timer_callback, new_task);
 
     return new_task;
 }
@@ -117,14 +124,14 @@ void unschedule(void)
     schedule();
 }
 
-void sleep_callback(void *arg)
-{
-    schedule_task((task_t*)arg);
-}
-
 void sleep_tsc(uint64_t tsc)
 {
-    timer_t timer = TIMER_RELATIVE_INIT(timer, tsc, sleep_callback, current_task);
-    timer_register(&timer);
+    timer_register_relative(&current_task->timer, tsc);
     unschedule();
+}
+
+void cancel_sleep(task_t *task)
+{
+    timer_unregister(&task->timer);
+    schedule_task(task);
 }

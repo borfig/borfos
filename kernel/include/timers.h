@@ -58,6 +58,17 @@ static inline bool timer_is_registered(timer_t *self)
     return !list_is_empty(&self->node);
 }
 
+static inline void timer_register_absolute(timer_t *self, uint64_t when)
+{
+    self->when = when;
+    timer_register(self);
+}
+
+static inline void timer_register_relative(timer_t *self, uint64_t when)
+{
+    timer_register_absolute(self, now() + when);
+}
+
 void timer_interrupt_entry_point(void);
 
 extern void (*timer_backend_set)(uint64_t);
