@@ -20,7 +20,6 @@
 #include <regs.h>
 #include <mem.h>
 #include <string.h>
-#include <kprintf.h>
 #include <asm.h>
 #include <timers.h>
 
@@ -71,13 +70,10 @@ void unschedule_task(task_t *task)
 static void idle(void)
 {
     for (;;) {
-        kprintf("giveup");
         giveup_cpu();
-        kprintf("enabling interrupts");
         enable_interrupts();
         wait_for_interrupts();
         disable_interrupts();
-        kprintf("disable_interrupts");
     }
 }
 
