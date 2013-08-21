@@ -55,6 +55,7 @@ OBJS += drivers/cpu/gdt.o drivers/cpu/idt.o drivers/cpu/cpuid.o
 OBJS += drivers/cpu/lapic.o drivers/cpu/kvm.o
 OBJS += drivers/vga.o drivers/pic.o
 OBJS += drivers/timers/apic.o
+OBJS += drivers/pci.o
 
 OBJS += lib/mem.o lib/timers.o lib/scheduler.o
 OBJS += lib/kprintf.o lib/bprintf.o

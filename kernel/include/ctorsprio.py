@@ -25,4 +25,5 @@ DEPENDENCIES = {
     'pic':['idt'],
     'apictimer':['lapic'],
     'scheduler':['mem'],
+    'pci':['vga','mem'],
     }
