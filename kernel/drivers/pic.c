@@ -90,12 +90,26 @@ void pic_set_handler(uint8_t irq, pic_handler_t handler)
 
 void pic_unmask(uint8_t irq)
 {
-    irq_mask[irq >= 8] &= ~(1 << (irq & 7));
+    if (irq < 8) {
+        irq_mask[0] &= ~(1 << (irq & 7));
+    }
+    else {
+        irq_mask[1] &= ~(1 << (irq & 7));
+        if (irq_mask[1] != 0xFF)
+            irq_mask[0] &= ~(1 << 2);
+    }
     set_mask();
 }
 
 void pic_mask(uint8_t irq)
 {
-    irq_mask[irq >= 8] |= 1 << (irq & 7);
+    if (irq < 8) {
+        irq_mask[0] |= 1 << (irq & 7);
+    }
+    else {
+        irq_mask[1] |= 1 << (irq & 7);
+        if (irq_mask[1] == 0xFF)
+            irq_mask[0] |= 1 << 2;
+    }
     set_mask();
 }
