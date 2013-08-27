@@ -57,7 +57,7 @@ OBJS += drivers/vga.o drivers/pic.o
 OBJS += drivers/timers/apic.o
 OBJS += drivers/pci.o
 
-OBJS += lib/mem.o lib/timers.o lib/scheduler.o
+OBJS += lib/mem.o lib/timers.o lib/scheduler.o lib/mutex.o
 OBJS += lib/kprintf.o lib/bprintf.o
 
 OBJS += libc/heap.o libc/ctype.o
