@@ -84,9 +84,11 @@ static void idle(void)
 {
     for (;;) {
         giveup_cpu();
-        enable_interrupts();
-        wait_for_interrupts();
-        disable_interrupts();
+        if (tasks_in_run_queue <= 1) {
+            enable_interrupts();
+            wait_for_interrupts();
+            disable_interrupts();
+        }
     }
 }
 
