@@ -32,6 +32,18 @@ static inline uint8_t inb(uint16_t port)
     return v;
 }
 
+static inline void outw(uint16_t port, uint16_t v)
+{
+    __asm__ __volatile__("outw %0,%1" : : "a" (v), "dN" (port));
+}
+
+static inline uint8_t inw(uint16_t port)
+{
+    uint16_t v;
+    __asm__ __volatile__("inw %1,%0" : "=a" (v) : "dN" (port));
+    return v;
+}
+
 static inline void outl(uint16_t port, uint32_t v)
 {
     __asm__ __volatile__("outl %0,%1" : : "a" (v), "dN" (port));
@@ -44,5 +56,40 @@ static inline uint32_t inl(uint16_t port)
     return v;
 }
 
+static inline void outsb(uint16_t port, const uint8_t *out, uint32_t count)
+{
+    __asm__ __volatile__("rep; outsb"
+                         : "+D"(out), "+c"(count) : "d"(port));
+}
+
+static inline void insb(uint16_t port, uint8_t *out, uint32_t count)
+{
+    __asm__ __volatile__("rep; insb"
+                         : "+D"(out), "+c"(count) : "d"(port));
+}
+
+static inline void outsw(uint16_t port, const uint16_t *out, uint32_t count)
+{
+    __asm__ __volatile__("rep; outsw"
+                         : "+D"(out), "+c"(count) : "d"(port));
+}
+
+static inline void insw(uint16_t port, uint16_t *out, uint32_t count)
+{
+    __asm__ __volatile__("rep; insw"
+                         : "+D"(out), "+c"(count) : "d"(port));
+}
+
+static inline void outsl(uint16_t port, const uint32_t *out, uint32_t count)
+{
+    __asm__ __volatile__("rep; outsl"
+                         : "+D"(out), "+c"(count) : "d"(port));
+}
+
+static inline void insl(uint16_t port, uint32_t *out, uint32_t count)
+{
+    __asm__ __volatile__("rep; insl"
+                         : "+D"(out), "+c"(count) : "d"(port));
+}
 
 #endif /* IO_H */
