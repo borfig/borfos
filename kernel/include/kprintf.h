@@ -48,4 +48,9 @@ void kprintf_register(kprintf_backend_t *);
         PANIC(#condition " failed"); \
     } while(0)
 
+#define PANIC_IF(expr) do {                     \
+        if((expr))                              \
+            PANIC(#expr " failed");             \
+    } while(0)
+
 #endif /* KPRINTF_H */
