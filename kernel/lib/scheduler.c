@@ -24,6 +24,7 @@
 #include <timers.h>
 
 list_t run_queue = LIST_INIT(run_queue);
+unsigned tasks_in_run_queue;
 
 task_t *current_task;
 uint8_t scheduler_started;
@@ -65,14 +66,18 @@ task_t *create_kernel_task(task_main_function_t func)
 
 void schedule_task(task_t *task)
 {
-    if (list_is_empty(&task->queue_node))
+    if (list_is_empty(&task->queue_node)) {
         list_insert_before(&run_queue, &task->queue_node);
+        ++tasks_in_run_queue;
+    }
 }
 
 void unschedule_task(task_t *task)
 {
-    if (!list_is_empty(&task->queue_node))
+    if (!list_is_empty(&task->queue_node)) {
         list_remove(&task->queue_node);
+        --tasks_in_run_queue;
+    }
 }
 
 static void idle(void)
