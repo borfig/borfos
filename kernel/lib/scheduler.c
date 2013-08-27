@@ -26,6 +26,7 @@
 list_t run_queue = LIST_INIT(run_queue);
 
 task_t *current_task;
+uint8_t scheduler_started;
 
 #define STACK_PUSH(s, v) do {\
         (s) -= sizeof(v);     \
@@ -97,6 +98,7 @@ task_t *next_task(void)
 
 __asm__(".globl scheduler_start\n"
         "scheduler_start:\n"
+        "movb $1, scheduler_started\n"
         "mov current_task, %eax\n"
         "movl $1f, (%esp)\n"
         "ret\n"
@@ -121,13 +123,20 @@ void giveup_cpu(void)
 void unschedule(void)
 {
     list_remove(&current_task->queue_node);
+    --tasks_in_run_queue;
     schedule();
 }
 
 void sleep_tsc(uint64_t tsc)
 {
-    timer_register_relative(&current_task->timer, tsc);
-    unschedule();
+    if (scheduler_started) {
+        timer_register_relative(&current_task->timer, tsc);
+        unschedule();
+    }
+    else {
+        uint64_t dest = now() + tsc;
+        while(now() < dest);
+    }
 }
 
 void cancel_sleep(task_t *task)
