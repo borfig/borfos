@@ -74,4 +74,8 @@ static inline bool list_is_empty(list_t *self)
 
 #define LIST_ELEMENT_AT(node, type, member) container_of(node, type, member)
 
+typedef bool (*list_predicate_t)(list_t *, void*);
+
+list_t *list_find(list_t *self, list_predicate_t func, void *arg);
+
 #endif /* LIST_H */
