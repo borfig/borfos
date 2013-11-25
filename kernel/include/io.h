@@ -59,7 +59,7 @@ static inline uint32_t inl(uint16_t port)
 static inline void outsb(uint16_t port, const uint8_t *out, uint32_t count)
 {
     __asm__ __volatile__("rep; outsb"
-                         : "+D"(out), "+c"(count) : "d"(port));
+                         : "+S"(out), "+c"(count) : "d"(port));
 }
 
 static inline void insb(uint16_t port, uint8_t *out, uint32_t count)
@@ -71,7 +71,7 @@ static inline void insb(uint16_t port, uint8_t *out, uint32_t count)
 static inline void outsw(uint16_t port, const uint16_t *out, uint32_t count)
 {
     __asm__ __volatile__("rep; outsw"
-                         : "+D"(out), "+c"(count) : "d"(port));
+                         : "+S"(out), "+c"(count) : "d"(port));
 }
 
 static inline void insw(uint16_t port, uint16_t *out, uint32_t count)
@@ -83,7 +83,7 @@ static inline void insw(uint16_t port, uint16_t *out, uint32_t count)
 static inline void outsl(uint16_t port, const uint32_t *out, uint32_t count)
 {
     __asm__ __volatile__("rep; outsl"
-                         : "+D"(out), "+c"(count) : "d"(port));
+                         : "+S"(out), "+c"(count) : "d"(port));
 }
 
 static inline void insl(uint16_t port, uint32_t *out, uint32_t count)
