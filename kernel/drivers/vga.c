@@ -35,79 +35,73 @@ typedef struct {
 
 #define VGA_IO_DATA (0x3D5)
 
-static struct {
+typedef struct {
+    file_t file;
     unsigned cursor;
-} VGA;
+} VGA_t;
 
-static void vga_sync_cursor_position(void)
+static void vga_sync_cursor_position(VGA_t *vga)
 {
     outb(VGA_IO_ADDRESS, 0xE);
-    outb(VGA_IO_DATA, (uint8_t)(VGA.cursor >> 8));
+    outb(VGA_IO_DATA, (uint8_t)(vga->cursor >> 8));
 
     outb(VGA_IO_ADDRESS, 0xF);
-    outb(VGA_IO_DATA, (uint8_t)(VGA.cursor));
+    outb(VGA_IO_DATA, (uint8_t)(vga->cursor));
 }
 
-static void vga_putchar(char c)
+static ssize_t vga_write_byte(file_t *file, uint8_t b)
 {
-    switch (c) {
+    VGA_t *vga = container_of(file, VGA_t, file);
+    switch (b) {
     case '\n':
-        VGA.cursor = ((VGA.cursor / VGA_COLUMNS) + 1) * VGA_COLUMNS;
+        vga->cursor = ((vga->cursor / VGA_COLUMNS) + 1) * VGA_COLUMNS;
         break;
     case '\r':
-        VGA.cursor -= VGA.cursor % VGA_COLUMNS;
+        vga->cursor -= vga->cursor % VGA_COLUMNS;
         break;
     case '\b':
-        if (VGA.cursor % VGA_COLUMNS) {
-            --VGA.cursor;
-            VGA_TEXT_MEMORY[VGA.cursor].character = ' ';
+        if (vga->cursor % VGA_COLUMNS) {
+            --vga->cursor;
+            VGA_TEXT_MEMORY[vga->cursor].character = ' ';
         }
         break;
     default:
-        VGA_TEXT_MEMORY[VGA.cursor].character = c;
-        VGA.cursor++;
+        VGA_TEXT_MEMORY[vga->cursor].character = b;
+        vga->cursor++;
         break;
     }
 
-    if (VGA.cursor >= VGA_CELLS) {
+    if (vga->cursor >= VGA_CELLS) {
         memmove(VGA_TEXT_MEMORY, VGA_TEXT_MEMORY + VGA_COLUMNS,
                 (VGA_CELLS - VGA_COLUMNS) * sizeof(VGA_TEXT_MEMORY[0]));
 
         for(size_t i = VGA_CELLS - VGA_COLUMNS; i < VGA_CELLS; ++i)
             VGA_TEXT_MEMORY[i].character = ' ';
 
-        VGA.cursor -= VGA_COLUMNS;
+        vga->cursor -= VGA_COLUMNS;
     }
+    vga_sync_cursor_position(vga);
+    return 1;
 }
 
-static void vga_write(const char *buffer, size_t len)
-{
-    for(; len; ++buffer, --len)
-        vga_putchar(*buffer);
-    vga_sync_cursor_position();
-}
+static const file_ops_t vga_file_ops = {
+    .write_byte = vga_write_byte,
+    .write_string = file_default_write_string,
+    .write_buffer = file_default_write_buffer
+};
 
-static void kprintf_write(kprintf_backend_t * db, const char * buf, size_t len)
-{
-    db = db;
-    vga_write(buf, len);
-}
-
-static kprintf_backend_t kprintf_backend = {
-    .node = LIST_INIT(kprintf_backend.node),
-    .kprintf_write = kprintf_write
+static VGA_t VGA = {
+    .file = { .ops = &vga_file_ops }
 };
 
 CONSTRUCTOR(vga)
 {
-    VGA.cursor = 0;
-
-    vga_sync_cursor_position();
+    vga_sync_cursor_position(&VGA);
 
     for(size_t i = 0; i < VGA_CELLS; ++i) {
         VGA_TEXT_MEMORY[i].character = ' ';
         VGA_TEXT_MEMORY[i].color = 0xF;
     }
 
-    kprintf_register(&kprintf_backend);
+    kprintf_register(&VGA.file);
 }

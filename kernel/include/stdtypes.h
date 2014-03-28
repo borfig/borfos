@@ -15,32 +15,9 @@
  *  You should have received a copy of the GNU General Public License
  *  along with borfos.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef KPRINTF_H
-#define KPRINTF_H
+#ifndef STDTYPES_H
+#define STDTYPES_H
 
-#include <asm.h>
-#include <list.h>
-#include <file.h>
-#include <stdarg.h>
+typedef long ssize_t;
 
-void kprintf(const char *format, /* format string */
-             ...) __attribute__((format(printf, 1, 2)));
-
-void kprintf_register(file_t *);
-
-#define PANIC(text) do { \
-        kprintf("PANIC at %s:%d:%s: %s", __FILE__, __LINE__, __func__, text); \
-        freeze_system(); \
-    } while(0)
-
-#define ASSERT(condition) do {\
-    if (!(condition)) \
-        PANIC(#condition " failed"); \
-    } while(0)
-
-#define PANIC_IF(expr) do {                     \
-        if((expr))                              \
-            PANIC(#expr " failed");             \
-    } while(0)
-
-#endif /* KPRINTF_H */
+#endif /* STDTYPES_H */

@@ -15,35 +15,27 @@
  *  You should have received a copy of the GNU General Public License
  *  along with borfos.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <kprintf.h>
-#include <bprintf.h>
+#include <file.h>
+#include <string.h>
 
-static list_t backends = LIST_INIT(backends);
-
-void kprintf_register(file_t *file)
+ssize_t file_default_write_string(file_t *self, const char *str)
 {
-    list_insert_before(&backends, &file->kprintf_node);
+    return self->ops->write_buffer(self, (const uint8_t *)str, strlen(str));
 }
 
-#define MAX_LENGTH (128)
-
-void kprintf(const char *format, ...)
+ssize_t file_default_write_buffer(file_t *self, const uint8_t *buf, size_t len)
 {
-    if (list_is_empty(&backends))
-        return;
-    char buffer[MAX_LENGTH];
-    va_list ap;
-    va_start(ap, format);
-    size_t l = vbprintf(buffer, sizeof(buffer), format, ap);
-    va_end(ap);
-    if (l < MAX_LENGTH)
-        buffer[l++] = '\n';
-    else
-        buffer[MAX_LENGTH-1] = '\n';
-
-    list_t *node;
-    LIST_FOREACH(&backends, node) {
-        file_t *file = LIST_ELEMENT_AT(node, file_t, kprintf_node);
-        file->ops->write_buffer(file, (const uint8_t*)buffer, l);
+    ssize_t total = 0, r=0;
+    for(; len && 0 < (r = self->ops->write_byte(self, *buf));
+        ++buf, --len) {
+        ++total;
     }
+    if (0 > r)
+        return r;
+    return total;
+}
+
+size_t foo(void)
+{
+    return 5;
 }

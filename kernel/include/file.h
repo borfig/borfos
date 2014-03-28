@@ -15,32 +15,29 @@
  *  You should have received a copy of the GNU General Public License
  *  along with borfos.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef KPRINTF_H
-#define KPRINTF_H
+#ifndef FILE_H
+#define FILE_H
 
-#include <asm.h>
+#include <stdint.h>
+#include <stddef.h>
+#include <stdtypes.h>
 #include <list.h>
-#include <file.h>
-#include <stdarg.h>
 
-void kprintf(const char *format, /* format string */
-             ...) __attribute__((format(printf, 1, 2)));
+typedef struct file_s file_t;
 
-void kprintf_register(file_t *);
+typedef struct {
+/* a file stream, write: */
+    ssize_t (*write_byte)(file_t *, uint8_t);
+    ssize_t (*write_string)(file_t *, const char*);
+    ssize_t (*write_buffer)(file_t *, const uint8_t *, size_t);
+} file_ops_t;
 
-#define PANIC(text) do { \
-        kprintf("PANIC at %s:%d:%s: %s", __FILE__, __LINE__, __func__, text); \
-        freeze_system(); \
-    } while(0)
+struct file_s {
+    const file_ops_t *ops;
+    list_t kprintf_node;
+};
 
-#define ASSERT(condition) do {\
-    if (!(condition)) \
-        PANIC(#condition " failed"); \
-    } while(0)
+ssize_t file_default_write_string(file_t *self, const char *str);
+ssize_t file_default_write_buffer(file_t *self, const uint8_t *buf, size_t len);
 
-#define PANIC_IF(expr) do {                     \
-        if((expr))                              \
-            PANIC(#expr " failed");             \
-    } while(0)
-
-#endif /* KPRINTF_H */
+#endif /* FILE_H */
