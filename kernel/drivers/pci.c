@@ -103,10 +103,26 @@ list_t *pci_get_devices_by_class(unsigned cl, unsigned sb)
     return &classes[cl]->subclasses[sb].devices;
 }
 
-static uint32_t pciread32(unsigned bus, unsigned slot, unsigned func, unsigned offset)
+static void pci_set_offset(unsigned bus, unsigned slot, unsigned func, unsigned offset)
 {
     outl(0xCF8, (bus << 16) | (slot << 11) | (func << 8) | (offset & 0xfc) | 0x80000000);
+}
+
+static uint32_t pciread32(unsigned bus, unsigned slot, unsigned func, unsigned offset)
+{
+    pci_set_offset(bus, slot, func, offset);
     return inl(0xCFC);
+}
+
+static uint32_t pci_read32(pci_device_t *dev, unsigned offset)
+{
+    return pciread32(dev->bus, dev->slot, dev->function, offset);
+}
+
+static void pci_write32(pci_device_t *dev, unsigned offset, uint32_t value)
+{
+    pci_set_offset(dev->bus, dev->slot, dev->function, offset);
+    outl(0xCFC, value);
 }
 
 static uint16_t pciread16(unsigned bus, unsigned slot, unsigned func, unsigned offset)
@@ -115,6 +131,18 @@ static uint16_t pciread16(unsigned bus, unsigned slot, unsigned func, unsigned o
     if (offset & 2)
         return r >> 16;
     return r;
+}
+
+uint16_t pci_command(pci_device_t *dev, uint16_t set, uint16_t unset)
+{
+    uint32_t v = pci_read32(dev, 0x4);
+    uint16_t orig_value = v;
+
+    uint16_t new_value = (orig_value | set) & ~unset;
+    if (new_value != orig_value)
+        pci_write32(dev, 4, (v & 0xFFFF0000) | new_value);
+
+    return orig_value;
 }
 
 static void pci_check_bus(unsigned bus);
