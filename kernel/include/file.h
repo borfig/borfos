@@ -35,6 +35,7 @@ typedef struct {
 struct file_s {
     const file_ops_t *ops;
     list_t kprintf_node;
+    size_t size;
 };
 
 ssize_t file_default_write_string(file_t *self, const char *str);
