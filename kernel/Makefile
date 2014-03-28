@@ -56,10 +56,12 @@ OBJS += drivers/cpu/lapic.o drivers/cpu/kvm.o
 OBJS += drivers/vga.o drivers/pic.o
 OBJS += drivers/timers/apic.o
 OBJS += drivers/pci.o
+OBJS += drivers/serial.o
 
 OBJS += lib/mem.o lib/timers.o lib/scheduler.o lib/mutex.o
 OBJS += lib/list.o lib/hashtable.o lib/hash.o
 OBJS += lib/kprintf.o lib/bprintf.o
+OBJS += lib/file.o
 
 OBJS += libc/heap.o libc/ctype.o
 OBJS += libc/newlib/memmove.o libc/newlib/memcmp.o libc/newlib/strncpy.o
