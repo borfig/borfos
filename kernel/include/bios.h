@@ -15,39 +15,17 @@
  *  You should have received a copy of the GNU General Public License
  *  along with borfos.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <mem.h>
-ENTRY(multiboot)
-SECTIONS
-{
-    . = VIRTUAL_BASE_ADDRESS;
-    _load_start = .;
-    .multiboot : {
-         *(.multiboot);
-    }
-    .text : {
-         *(.text*);
-    }
-    .rodata : {
-         *(.rodata*);
-    }
-    .data : {
-         *(.data*);
-    }
-    _load_end = .;
-    . = ALIGN(PAGE_SIZE);
-    .bss : {
-         *(.bss.page_aligned*);
-         *(COMMON);
-         *(.bss);
-    }
-    . = ALIGN(PAGE_SIZE) + PAGE_SIZE;
-    _initial_mapping_end = .;
-    stack_start = .;
-    _bss_end = .;
-    /DISCARD/ : {
-         *(.comment)
-         *(.eh_frame)
-         *(.note.gnu.build-id)
-    }
-}
-BDA = KERNEL_MEMORY_BASE + 0x400;
+#ifndef BIOS_H
+#define BIOS_H
+
+#include <stdint.h>
+
+typedef struct {
+    uint16_t com_ports[4];
+    uint16_t lpt_ports[3];
+    uint16_t ebda_sector;
+} BDA_t;
+
+extern BDA_t BDA;
+
+#endif /* BIOS_H */
