@@ -360,3 +360,9 @@ void kernel_page_free(void *addr)
     page_unmap(page);
     page_free(page);
 }
+
+uint32_t phaddr_of_kernel_vaddr(uint32_t vaddr)
+{
+    size_t page_index = (vaddr - KERNEL_MEMORY_BASE) >> PAGE_BITS;
+    return (kernel_page_tables[page_index] & ~(PAGE_SIZE-1)) | (vaddr & (PAGE_SIZE-1));
+}

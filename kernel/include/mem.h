@@ -76,6 +76,8 @@ void page_unmap(page_t *page);
 void *kernel_page_allocate(unsigned order);
 void kernel_page_free(void *addr);
 
+uint32_t phaddr_of_kernel_vaddr(uint32_t vaddr);
+
 #endif /* !ASM */
 
 #endif /* MEM_H */
