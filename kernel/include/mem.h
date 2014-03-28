@@ -60,6 +60,8 @@ static inline void reserve_up_to_phaddr_before_paging(uint32_t phaddr)
 typedef struct page_s {
     list_t free_node; // if not empty, belongs to a free-list
     int order; // allocated order
+    void *kernel_vaddr;
+    unsigned kernel_vaddr_refcnt;
 } page_t;
 
 page_t *page_allocate(unsigned order);
@@ -67,6 +69,9 @@ void page_free(page_t *);
 
 void *map_phaddr_in_kernel(uint32_t phaddr, unsigned order);
 void unmap_phaddr_in_kernel(void *addr);
+
+void *page_map(page_t *page);
+void page_unmap(page_t *page);
 
 void *kernel_page_allocate(unsigned order);
 void kernel_page_free(void *addr);

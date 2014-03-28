@@ -180,6 +180,8 @@ CONSTRUCTOR(mem)
     ARRAY_DYNAMIC_FOREACH(page, pages, pages_count) {
         list_init(&page->free_node);
         page->order = -1;
+        page->kernel_vaddr = NULL;
+        page->kernel_vaddr_refcnt = 0;
     }
     for(const memory_map_t *mmap_addr = mbi->mmap_addr;
         mmap_addr < mmap_end;
@@ -316,12 +318,36 @@ void unmap_phaddr_in_kernel(void *addr)
     vaddr_free(vaddr);
 }
 
+static uint32_t phaddr_of_page(page_t *page)
+{
+    return (page - pages) << PAGE_BITS;
+}
+
+void *page_map(page_t *page)
+{
+    if (!page->kernel_vaddr) {
+        page->kernel_vaddr = map_phaddr_in_kernel(phaddr_of_page(page), page->order);
+        if (!page->kernel_vaddr)
+            return NULL;
+    }
+    ++page->kernel_vaddr_refcnt;
+    return page->kernel_vaddr;
+}
+
+void page_unmap(page_t *page)
+{
+    if (--page->kernel_vaddr_refcnt)
+        return;
+    unmap_phaddr_in_kernel(page->kernel_vaddr);
+    page->kernel_vaddr = NULL;
+}
+
 void *kernel_page_allocate(unsigned order)
 {
     page_t *page = page_allocate(order);
     if (NULL == page)
         return NULL;
-    void *result = map_phaddr_in_kernel((page - pages) << PAGE_BITS, order);
+    void *result = page_map(page);
     if (NULL == result)
         page_free(page);
     return result;
@@ -330,6 +356,7 @@ void *kernel_page_allocate(unsigned order)
 void kernel_page_free(void *addr)
 {
     size_t page_index = (((uint32_t)addr) - KERNEL_MEMORY_BASE) >> PAGE_BITS;
-    page_free(pages + (kernel_page_tables[page_index] >> PAGE_BITS));
-    unmap_phaddr_in_kernel(addr);
+    page_t *page = pages + (kernel_page_tables[page_index] >> PAGE_BITS);
+    page_unmap(page);
+    page_free(page);
 }
